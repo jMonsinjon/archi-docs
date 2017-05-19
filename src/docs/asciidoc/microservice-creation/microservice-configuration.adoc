@@ -1,0 +1,95 @@
+=== Working with configurations
+
+==== A quick overview
+
+Below is a schema of the different checks that are made when running a Cdiscount Java microservice :
+
+image::app-launch-configuration.png[Configuration overview]
+
+You can find more details about the different parameters and configurations in the sections below.
+
+==== Different configuration files
+
+There are multiple levels of configurations in our microservice architecture.
+
+. *Application's default config*. Located inside the project itself under src/main/resources/application.yml, this file contains the default configuration and should contain all the variables that can be used within your project because it is the reference config file. However, do not put real connection strings in this config file (e.g. Zookeeper or JDBC connection strings) for debugging issues.
+. *External config*. Located outside the project itself, external configs are useful for multiple reasons : they allow to use different variables for different environments, they allow to use common variables for different apps (e.g. same JDBC connection strings) and they also have the advantage to present all the configurations for all apps and environments... in the same place. There are multiple types of external configurations :
+.. *Environment-specific but application-agnostic (= common) config*. Mostly used for connection strings, all the files `application-common-{something}.yml` define common variables. Properties inside this file override default application.yml properties. As an example, application-common-jdbc.yml under a06 folder will define common connection strings for dev environment.
+    Common properties need to be imported in your application external config file using the directive `spring.profiles.include: profile1, profile2`
+.. *Environment and application-specific config*. These files will usually be quite small and are responsible for loading applications-common properties. There is exactly one file for each application and environment in the form `application-{my-artifact-id}.yml`, however an application config file can import multiple common configs. For example a service using Mongo and Kafka will usually have a line such as : `spring.profiles.include: common,common-mongo,common-kafka`. These config files *override application's default config* but *DO NOT override common config files* imported using `spring.profiles.include directive` !
+
+TIP: You can override JVM options for your env/application by adding a your-application-name.vmargs to the external config folder, containing a line with the JVM args such as `-Xmx1024m -Xms1024m`
+
+==== Using a config server
+
+To use a config server and retrieve your configuration from it, the microservice should :
+
+  * have a bootstrap.yml properties file containing :
+----
+spring:
+  application.name: my-app-name
+app.perimeter: my-perimeter
+----
+  * inherit from services-cloud-parent-pom, version >= 3.3.4
+
+The config server URL will be constructed from :
+
+  * spring.cloud.config.uri property (if provided)
+  
+OR (recommended)
+
+  * platform = system property (-Dplatform) : ex a01_BDX (start=a01, end=BDX)
+  * perimeter = app.perimeter property
+  * "http://" + platformStart + "-" + perimeter + "configserver" + "-" + platformEnd + ".cdweb.biz:10410"
+
+The configuration files retrieved will be the one tagged with the application's version (or branch master if SNAPSHOT)
+
+==== Point your app to a specific environment
+
+===== Local developments
+
+In most cases you can use the config server like described in the section <<Using a config server>>, even for your local developments. To do that, just use the platform VM param, as mentionned in the dedicated section :
+
+[source,bash]
+----
+-Dplatform=a06
+----
+
+However in rare cases you need to test your app against a modified version of the external config. In those rare cases, you can't use the config server without commiting your external services-config and refreshing the config server, which can be quite cumbersome.
+
+To avoid that, you can add two VM options to your launch parameters. The first one will tell your app that you are in dev mode, so it should not use the config server :
+
+[source,bash]
+----
+-Dspring.profiles.active=dev
+----
+
+The second one, as you want to use local but external configuration, is to specify the path to the correct external config folder (usually it is safer to point a dev/a06 environment) :
+
+[source,bash]
+----
+-Dspring.config.location=/path/to/config/folder/services-config/a06/
+----
+
+This variable needs to point on your *external* config folder
+
+===== Automatic deploys
+
+There is nothing to do really. As long as you have a Git project services-config containing your config folders commited on the same team repository as the project deploying, you're good to go.
+
+==== Specific variables knowledge
+
+Each application must specify a port or a range of ports on which the application will start. It can be specified either in any of the <<Different configuration files>> (internal, external common or external application specific configs).
+
+For *Docker deploys*, all apps should be configured to run on *8080 port*. This is the prefered and default option.
+
+For other, *external services* that will not used docker, you can define *any port or range of ports*, such as 21000-22000.
+
+Example config :
+
+[source,yaml]
+----
+app:
+  minPort: 8080
+  maxPort: 8080
+----

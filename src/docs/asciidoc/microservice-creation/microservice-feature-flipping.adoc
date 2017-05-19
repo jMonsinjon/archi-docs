@@ -1,0 +1,32 @@
+=== Feature Flipping
+
+Any client calling a microservice could send some values in the request's header. The following are managed by a microservice :
+
+* SiteId
+* SiteVersionCookie
+* SiteVersionCookieNoChanges
+
+The SiteVersionCookieXX are strings formatted like this : 12.0|56.1|105.0|...
+
+It contains the id of a feature and if it is active (1) or not (0).
+
+The library services-base contains a custom annotation to handle the feature flipping : @FeatureFlipping
+
+It takes as parameter the list of feature ids the microservice wants to be aware of.
+
+The state of each feature is then available in the ThreadLocal.
+
+Example :
+
+[source,java]
+----
+include::examples/FeatureFlipping.java[]
+----
+
+You just have to :
+
+1. Add the annotation @FeatureFlipping to a method
+1. Get the Map of features calling FeatureFlippingThreadLocal.get() (anywhere in the method or in method called (services, repositories, ...))
+1. Test the active/inactive state of the features
+
+Just be aware that the features are attached to the current Thread and are then only available in the method. As soon as the method finishes the ThreadLocal is cleaned.

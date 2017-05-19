@@ -1,0 +1,101 @@
+=== Building and deploying your microservice
+
+Microservices are great for many reasons, but there is also an aspect that can be very cumbersome and hard to tackle : how to build, deploy and monitor your service.
+This section will make your life easier by explaining how to automatically build your job, release it and go to production... very easily !
+
+Basically a Java microservice life management consists of the following repeating loop :
+
+* Develop and test on your local machine
+* Commit your code
+* Push your code
+* Automatically build and deploy a snapshot version on dev environment
+* Release your app and automatically deploy it to a recette environment
+* Deploy your app to preproduction
+* Deploy your app to production
+
+If steps 1 and 2 need to be manual, steps 3 to 6 are automatic or at least semi-automatic. Below we will explain how to process each step in detail.
+
+==== Building with Jenkins
+
+Jenkins is our CI (Continuous Integration) environment responsible for building and deploying our apps. It is pretty
+easy to use, but first you need to create the Jenkins jobs for your app. You can very easily do that using this
+Jenkins job : http://a99build002.cdweb.biz:8081/job/all-create-jenkins-jobs/build?delay=0sec[create-jenkins-job].
+
+This will create you two jobs :
+
+* A *build* job
+* A *release* job
+
+You also need to add the jenkins submodule in you git repository with the following command line (execute it at the root of your Git repository, e.g. in a GitBash command) :
+
+[source,bash]
+----
+git submodule add http://git.cdbdx.biz/git/alm/jenkins-scripts.git
+----
+
+And then add the files and commit them.
+
+Important : For jenkins builds to work you need *jenkins* user to be part of your Git team. Verify on Git -> your-team -> Members. (E.g. : http://git.cdbdx.biz/your-team?tab=members[Git Members])
+
+==== Deploying to Docker/Mesos
+
+When we want to deploy our apps we use Docker containers that we deploy on Mesos clusters using Marathon framework.
+
+For all non-production apps, you can find Marathon here : http://a02mesos001.cdweb.biz:8080/ui/\#/apps[non-prod Marathon UI].
+
+For all production apps, you can find Marathon here : http://a01mesos001.cdweb.biz:8080/ui/\#/apps[prod Marathon UI]
+
+To prepare your app for Docker environments, you need to define a few things in your application.yml config file :
+
+[source,yaml]
+----
+app:
+  minPort: 8080
+  maxPort: 8080
+  perimeter: your-perimeter //"Silo" (ex search, marketplace, datafiller...)
+----
+
+After a deploy you will find your application deployed with the following path :
+
+[source,bash]
+----
+/{perimeter}/{platform}/{your-app-name-optional-tenant-data}
+----
+
+===== Deploying to dev
+
+Dev deploy is done automatically by Jenkins after a build. Nothing more to do here, if you need to deploy again your app on dev environment, just launch your app build in Jenkins !
+
+It's the snapshot corresponding to your app that gets deployed to dev.
+
+===== Deploying to staging
+
+Dev deploy is done automatically by Jenkins after a release. If for some reason you still need to deploy manually to
+the staging environment, do not launch another release if you have no code to release, instead use the
+http://a99build002.cdweb.biz:8081/job/all-deploy-recette/build?delay=0sec[deploy-to-recette] job.
+
+It's the last released artifact that gets deployed to staging (recette).
+
+===== Deploying to preproduction
+
+Preproduction has to be launched manually using http://a99build002.cdweb.biz:8081/job/all-deploy-preprod/build?delay=0sec[deploy-to-preprod] job.
+
+It's the last released artifact that gets deployed to preproduction (unless specified otherwise).
+
+===== Deploying to production
+
+Production deploy has to be launched manually using http://a99build002.cdweb.biz:8081/job/all-deploy-prod/build?delay=0sec[deploy-to-prod] job.
+
+It's the last released artifact that gets deployed to production (unless specified otherwise).
+
+==== Overriding JVM options
+
+Sometimes you might want/need to override some JVM arguments such as RAM (xms/xmx args). For example, the default RAM allocation for a Marathon-deployed service is 256Mo, which is more than sufficient for most microservices but can be a bit short for heavy-processing/memory services such as a dataloader.
+
+In the case you want to override these RAM settings (or actually any JVM option), you can add a file named "your-application-name.vmargs" in the external config folder corresponding to the target environment. As an example, to set 1024Mo for a service named `my-dataloader` in production, you would put a file named :
+
+`services-config/a01/my-dataloader.vmargs`
+
+with the following line inside :
+
+`-Xmx1024m -Xms1024m`

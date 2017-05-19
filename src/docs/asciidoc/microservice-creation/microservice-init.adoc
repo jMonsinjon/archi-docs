@@ -1,0 +1,95 @@
+=== Frameworks & dependencies
+
+Starting a _microservices_ architecture is not trivial, this is why we have used a bunch of frameworks to make our life easier, and is also why we defined some components for you to reuse so you can focus on your actual business code instead of having to handle all the microservices-related concerns (ex discovery, monitoring, build, deploy, etc.).
+
+==== Frameworks used
+
+First, here is an overview of all the frameworks we use with links to their respective documentation if you would like to learn more about them :
+
+* http://projects.spring.io/spring-boot[Spring Boot] to create stand-alone https://spring.io[Spring] applications very easily.
+* http://projects.spring.io/spring-cloud[Spring Cloud] to create microservices architecture's compliant applications, including service discovery, circuit breakers and routing. In particular we use :
+** http://cloud.spring.io/spring-cloud-static/Brixton.SR5/#spring-cloud-zookeeper-discovery[Spring Cloud Zookeeper Discovery] for service discovery along with our Zookeeper servers. More on Zookeeper install here.
+** http://cloud.spring.io/spring-cloud-static/Brixton.SR5/#_circuit_breaker_hystrix_clients[Hystrix Clients] and http://cloud.spring.io/spring-cloud-static/Brixton.SR5/#spring-cloud-ribbon[Ribbon] for circuit breakers
+** http://cloud.spring.io/spring-cloud-static/Brixton.SR5/#_circuit_breaker_hystrix_dashboard[Hystrix dashboard and Turbine] to monitor our circuit breakers
+** http://cloud.spring.io/spring-cloud-static/Brixton.SR5/#spring-cloud-feign[Feign] to make REST clients
+** http://cloud.spring.io/spring-cloud-static/Brixton.SR5/#_router_and_filter_zuul[Zuul] for intelligent routing and filtering
+
+There are a lot of frameworks but you don't really have to be an expert to use them because we have done that for you !
+
+==== POM basics
+
+When defining the basic info of your app, here are a few tips :
+
+Define your app with `${VERSION_NUMBER}` as a parameter and declare a property `VERSION_NUMBER` to set your pom's version, such as :
+
+[source,xml]
+----
+<groupId>com.cdiscount.your-team</groupId>
+<artifactId>the-name-of-your-app</artifactId>
+<version>${VERSION_NUMBER}</version>
+<packaging>jar</packaging>
+
+<properties>
+  <VERSION_NUMBER>3.0.10-SNAPSHOT</VERSION_NUMBER>
+</properties>
+----
+
+Also, all the dependencies versions are already declared in parent pom, so most of the time (unless you want to use some exotic dependency) you don't have to declare the version for your dependency.
+For Example :
+
+[source,xml]
+----
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-core</artifactId>
+</dependency>
+----
+
+==== Using POM dependencies
+
+A lot of util dependencies for your Java microservices can be found under the http://git.cdbdx.biz/archi[architecture team git repository].
+
+Here is an overview of architecture dependencies :
+
+image::archi-utils.png[Archi Utils]
+
+You can go to each Git project to see the code or learn a little bit more about when each depedency should be used, but here some explanations.
+
+===== Parent POM vs Dependencies
+
+Archi repositories contain 2 types of projects :
+
+* *Parent pom*, which are just simple Maven pom and only a pom (no code) and must be use with https://maven.apache.org/pom.html#Inheritance[Maven inheritance] system, i.e. declaring parent such as :
+
+[source,xml]
+----
+<parent>
+  <groupId>com.cdiscount.archi</groupId>
+  <artifactId>services-cloud-parent-pom</artifactId>
+  <version>1.5.4</version>
+</parent>
+----
+
+* *Dependencies*, which are util librairies containing code that you can use in your own app, classes you can extend and so on. You have to declare them in your POM like this :
+
+[source,xml]
+----
+<dependencies>
+  <dependency>
+    <groupId>com.cdiscount.archi</groupId>
+    <artifactId>services-mongo-utils</artifactId>
+    <version>${services-utils.version}</version>
+  </dependency>
+</dependencies>
+----
+NOTE: This previous example uses a property to set up service utils version for all the pom.
+
+===== Parent and dependencies overview
+
+Here is a quick overview of available parent-pom and dependencies :
+
+* [small]#*services-parent-pom* : defines libs dependencies for really basic Java services (without any web container) and also defines the dependencies versions. You should *NOT* depend directly on this pom unless you are absolutely certain of what you are doing...#
+* *services-web-parent-pom* : adds SpringBoot to services-parent-pom dependencies. Useful for all apps that need a web container *BUT* don't need cloud services such as service discovery. Consider looking at services-cloud-parent-pom otherwise.
+* *services-cloud-parent-pom* : adds SpringCloud dependencies and service discovery to services-web-parent dependencies. It is the parent-pom you should depend on most of the time.
+* [small]#*services-discovery-zookeeper* : allow services to automatically register on configured service discovery. You should *NOT* use this library directly but should instead depend on services-cloud-parent-pom which already loads this dependency as well as other dependencies.#
+* *services-utils* : defines a minimal framework and its dependencies to be able to use a specific technology that you need in your service. It's a multi-modules project that currently implements connectors for Mongo, Zookeeper, Solr 4 & 5, Couchbase, JDBC, Kafka, etc... For an updated list of all available modules, please check directly existing modules on http://git.cdbdx.biz/archi/services-utils[services-utils Git repository]. Note that you should only depend on the modules that are of interest to you, e.g. don't load services-mongo-utils if you don't have Mongo...

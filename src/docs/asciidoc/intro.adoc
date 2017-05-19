@@ -1,0 +1,76 @@
+= Microservices general architecture
+
+include::general/microservices-architecture.adoc[]
+
+= Java Microservice creation
+:imagesdir: microservice-creation/images
+:toclevels: 4
+
+If you want to start right away creating a brand-new microservice, please read the http://a99build002/archi/archi-docs/latest/#how-to-a-fully-functional-microservice-in-10-minutes[How-to section].
+However if you want a better look at how microservices are made at Cdiscount, please have a look at <<Understanding microservices>>
+
+== Dev environment setup
+
+NOTE: All software can be found on `\\tfsdropserver\Java`
+
+.There are a few prerequesites to be able to work with Java environment and build microservices:
+* Java Development Kit 8: pick the latest one or pick the one on the local share
+* an IDE: the recommended choice is https://www.jetbrains.com/idea/download/#section=windows[IntelliJ IDEA] but you might want to consider using https://spring.io/tools/sts/all[Spring Tool Suite] if you are familiar with Eclipse.
+
+.Optional
+* If you are more comfortable with the command line and do not want to use ide embedded Maven, use Maven 3.3.9 to build your projects. Installation instructions are https://maven.apache.org/install.html[here]
+
+.Configuration
+* Make your IntelliJ / Eclipse / STS use the previously installed JDK
+* You need to use a special http://git.cdbdx.biz/archi/ide/blob/master/maven_settings.xml[maven settings] to be able to use our artifactory proxy
+* To keep a consistent code format, we use an http://git.cdbdx.biz/archi/ide/blob/master/intellij-java-google-style.xml[IntelliJ formatter] or an http://git.cdbdx.biz/archi/ide/blob/master/eclipse-java-google-style.xml[Eclipse formatter].
+
+Of course you will need to be familiar with <<Git Resources,Git>> to be more productive and efficient.
+
+=== A note on code formatters
+
+It always helps readability and maintainability if everyone follows some common guidelines. Our guidelines for http://git.cdbdx.biz/archi/ide/blob/master/intellij-java-google-style.xml[IntelliJ] or http://git.cdbdx.biz/archi/ide/blob/master/eclipse-java-google-style.xml[Eclipse] follow https://google.github.io/styleguide/javaguide.html[Google Style guidelines]. If you already are a Java expert you will probably be familiar with these guidelines but if you are new to Java you should take ten minutes to have a good look at them, specially at https://google.github.io/styleguide/javaguide.html#s5-naming[naming] if you're coming from C# world !
+
+==== Importing code style in IntelliJ
+
+1. Download http://git.cdbdx.biz/archi/ide/blob/master/intellij-java-google-style.xml[IntelliJ formatter]
+1. Open IntelliJ settings (File -> Settings)
+1. Go to code style settings (Editor -> Code Style)
+1. Click on Manage and then Import and specify the downloaded IntelliJ settings file, as shown in the capture below.
+
+image::intellij-java-google-style-settings.png[Import GoogleStyle to IntelliJ]
+
+==== Importing code style in Eclipse
+
+1. Download http://git.cdbdx.biz/archi/ide/blob/master/eclipse-java-google-style.xml[Eclipse formatter]
+1. Open Eclipse settings (Window -> Preferences)
+1. Select Java/Code Style/Formatter.
+1. CLick on import and select the downloaded Eclipse settings file.
+
+== How-to : A fully functional microservice in 10 minutes
+
+What if you could have a runnable _Java_ microservice with all the correct dependencies, tests and documentation, in less than 10 minutes ? Wait... you can !
+
+include::microservice-creation/microservice-yeoman-microservice.adoc[]
+
+== Git Resources
+
+include::dev/git.adoc[]
+
+== Understanding microservices
+
+include::microservice-creation/microservice-init.adoc[]
+
+include::microservice-creation/microservice-configuration.adoc[]
+
+include::microservice-creation/microservice-logging.adoc[]
+
+include::microservice-creation/microservice-feature-flipping.adoc[]
+
+include::microservice-creation/microservice-test.adoc[]
+
+include::microservice-creation/microservice-documentation.adoc[]
+
+include::microservice-creation/microservice-build-and-deploy.adoc[]
+
+include::microservice-creation/microservice-troubleshooting.adoc[]

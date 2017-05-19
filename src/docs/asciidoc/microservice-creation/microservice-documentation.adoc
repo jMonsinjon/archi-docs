@@ -1,0 +1,202 @@
+=== Adding documentation
+
+Adding some documentation is always a good idea. Currently documentation can be written at 3 levels :
+
+* *Code documentation* : javadoc. Directly around the code itself
+* *README.md* : Gitbucket-friendly documentation. Usually contains installation-related info, such as :
+** A brief description of what the project does
+** How to install or build the sources locally
+** How to contribute
+* *Asciidoctor documentation* : Project specific documentation, such as :
+** Detailed description of what the project does
+** Detailed project usage, with examples on how to use it
+** Optional REST API documentation and how to use it
+* *Git Changelog* : A list of all Git commits corresponding to each tagged version, to keep track of the changes on the project
+* *REST API documentation* : API related documentation, i.e. a list of all callable controllers and how to call them (`GET`/`POST`/`PUT`, which parameters, which response, etc.). Currently provided by Swagger/Springfox.
+
+==== Generating the documentation
+
+When developing a microservice using Cdiscount java development context, it is pretty easy to write and use above types of documentation
+
+First of all, in order to generate any documentation you should :
+
+. Make sure you depend on one of archi parent pom depedencies (e.g. `services-parent-pom`, `services-web-parent-pom`, `services-cloud-parent-pom`, ...)
+. Create path `src/docs/asciidoc` in your project
+. Add a file `intro.adoc` that contains the following lines to add links to the different documentations (optionnal, but very useful) :
+
+[source,java]
+----
+== Your service name
+
+* link:javadoc/[Javadoc]
+* link:apidoc/[API Documentation]
+* link:changelog[Changelog]
+----
+
+[start=4]
+. Add a file `index.adoc` to folder `apidoc` (`asciidoc/apidoc`) that contains the following lines (only if you have REST
+controllers) :
+
+[source,java]
+----
+\include::apidoc/paths.adoc[]
+
+\include::apidoc/definitions.adoc[]
+----
+
+[start=5]
+. Add `<skipDocumentation>false</skipDocumentation>` to your POM properties (i.e. under `<properties></properties>` tags)
+. Add the following lines to your .gitignore, depending on what you have enabled :
+
+[source,bash]
+----
+# Always add this line so changelog does not get commited
+src/docs/asciidoc/changelog.adoc
+
+# Only add these 3 lines if you have REST controllers
+src/docs/asciidoc/apidoc/overview.adoc
+src/docs/asciidoc/apidoc/paths.adoc
+src/docs/asciidoc/apidoc/definitions.adoc
+----
+
+
+
+===== Generate Asciidoctor documentation
+
+When developing a microservice using Cdiscount java development context, it is pretty easy to write Asciidoctor documentation. Once you followed general steps above, just write as many http://asciidoctor.org/docs/asciidoc-writers-guide[Asciidoctor documentations files] as you like, but make sure you have an `intro.adoc` file along with your other files (it will be your documentation "homepage").
+
+TIP: You can use **AsciiDoc** plugin for IntelliJ to easily preview your .adoc files ! Prefer a 64-bit Intellij version so you can use the JavaFX integration of the plugin.
+
+===== Generate Javadoc
+
+Javadoc generation is now automatic and will be available at the same place than your other Asciidoc documentation (and even if you have no Asciidoc documentation), at `./javadoc` (from your app version path)
+
+===== Generate REST API documentation
+
+====== Generate REST methods documentation from the code
+
+To generate REST API, we use a lib called http://springfox.github.io/springfox/docs/current/#dependencies[Springfox] (previously Swagger). First, you need to follow general steps presented above.
+
+Then, to use basic API documentation, you need to :
+
+* Add `@EnableSwagger2` to your app main class (do not add it to your `@Configuration` annotated class, it will not work)... and that's it !
+* Add an integration test to convert your API documentation to Asciidoc format.
+
+Here is an example test class to do that :
+
+[source,java,options="nowrap"]
+----
+include::examples/DocumentationIT.java[]
+----
+
+\...`RestDocEnabledTest` class :
+
+[source,java,options="nowrap"]
+----
+include::examples/RestDocEnabledTest.java[]
+----
+
+And `AbstractTest` class :
+
+[source,java,options="nowrap"]
+----
+include::examples/AbstractTestAsciidoc.java[]
+----
+
+You can then access your API documentation on the same place than your other Asciidoc documentation (and even if you have no Asciidoc documentation), at `./apidoc` (from your app version path)
+
+====== Generate examples for REST methods
+
+Using powerful http://docs.spring.io/spring-restdocs/docs/current/reference/html5/#getting-started-documentation-snippets[Spring REST Docs] framework, you can easily generate HTTP requests and responses examples, making your
+API much, much more easy to understand and use !
+
+Suppose you have the following `ProductFinderController` :
+
+[source,java,options="nowrap"]
+----
+include::examples/ProductFinderController.java[]
+----
+
+\... and want to generate HTTP request/response example for your method "searchBySkus". It's pretty easy, you will
+have to :
+
+. Define a controller test that will simply call your controller endpoing, e.g. :
+
+[source,java,options="nowrap"]
+----
+include::examples/ProductFinderControllerIT.java[]
+----
+
+There is a little subtility here : to be able to add the example to the correct controller method, Spring REST docs
+framework will convert both your test method name and the value of the @ApiOperation annotation of your REST method
+to an underscore name.
+
+A few examples :
+
+[cols="5*", options="header"]
+|===
+|@ApiOperation value
+|Resolved to
+|Test method name
+|Resolved to
+|OK ?
+
+|Search by sku
+|search_by_sku
+|searchBySku
+|search_by_sku
+|Yes
+
+|Search by sku
+|search_by_sku
+|searchBySkuExample
+|search_by_sku_example
+|No (name is different)
+
+|Search by SKU
+|search_by_sku
+|searchBySKU
+|search_by_s_k_u
+|No (in the 2d case, CamelCase generate "s_k_u" for "SKU" instead of "sku")
+
+|===
+
+[start=2]
+. Ensure that examples tests are run *before* the test that will generate the Swagger documentation. To do that, you
+can declare a JUnit TestSuite to make sure your test classes will be run in the correct order. Example :
+
+[source,java,options="nowrap"]
+----
+include::examples/DocumentationTestSuiteIT.java[]
+----
+
+As long as you respect given naming conventions, examples will be automatically added to your REST API documentation.
+
+==== Dependencies notes
+
+Here is a table suming up the minimum versions of the dependencies (both libs and parent poms) that you should depend on to enable automatic documentation generation :
+
+[cols="2*", options="header"]
+|===
+|Dependency
+|Version
+
+|services-cloud-parent-pom
+|1.6.8
+
+|services-web-parent-pom
+|2.1.7
+
+|services-parent-pom
+|4.1.5
+
+|services-utils
+|3.7.12
+
+|services-dashboard
+|3.2.1
+
+|services-gateway
+|3.4.3
+
+|===

@@ -1,0 +1,34 @@
+=== Logging
+
+==== Basics
+
+In the CDS common architecture for java micro-services we made several choices concerning the logging technologies.
+We use SLF4J as a logging facade and logback as a logger solution. We have a common logback configuration which adapt itself according to the application context.
+This configuration is pulled if you inherit from one of the parent pom.
+
+The log pattern is the following:
+----
+${logAppPerimeter}/${logPlatform}/${logFullAppName}/${HOSTNAME}: %d{yyyy-MM-dd HH:mm:ss.SSS} [${logFullAppName},%X{X-B3-TraceId:-},%X{X-B3-SpanId:-},%X{X-Span-Export:-}] [%thread] %-5level %logger{35} - %msg%n
+----
+
+.By default several appenders are activated:
+* ConsoleAppender : for console output
+* SyslogAppender : for syslog log aggregation (only enabled for marathon tasks)
+* FileAppender : for file logging (not enabled for marathon tasks)
+
+==== Log centralization
+Log aggregation and centralisation is provided by syslog. Each log line is sent to the syslog agent installed on every docker.
+This agent takes the responsibility to send the log to the syslog master on a99syslog001.
+Syslog is then configured to do various things with the log.
+First it write the log to files on the machine then it sends a copy to a logstash instance.
+This instance then pre-filter the log line to extract common information (Silo, Platform, TraceId, ...) and redirect the logs to the team responsible of the message.
+This team can then filter the message and send it to an elasticsearch index for example.
+
+In case of "ERROR" or "WARNING" log level we also send a copy to a specific logstash responsible for error logs.
+Currently it sends lines to a specific elasticsearch index to be rendered by the link:http://a99build002.cdweb.biz/#/alm/dashboard-bugs/latest[Bug Dashboard]
+
+image::syslog_logstash_archi.png[Log centralization architecture]
+
+If you want to add log centralization for your team, you have to create your own logstash (see link:http://git.cdbdx.biz/ft-search/docker-monitoring-configuration/tree/master/logstash-conf/ft-search/syslog[ft search syslog's logstash configuration]) and ask for a VIP on the deployed instance.
+When the VIP is available just submit a PR for link:http://git.cdbdx.biz/ft-search/docker-monitoring-configuration/tree/master/logstash-conf/archi/syslog[logstash configuration] to add an extra output to 03_outputs.conf.
+

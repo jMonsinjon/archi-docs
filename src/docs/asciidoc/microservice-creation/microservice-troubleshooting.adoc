@@ -1,0 +1,33 @@
+=== Troubleshooting
+
+Below you will find some common problems and how to resolve them.
+
+==== Jenkins
+
+To be filled...
+
+==== Mesos/Marathon deployments
+
+To troubleshoot common Mesos/Marathon deployments issues, we first need to understand how Jenkins deploys to Marathon :
+
+. A Docker image (snapshot for build job and release for release job) is built and sent to central docker-registry
+. For all the tenantData registered in team's config folder :
+.. A marathon.json configuration is sent to Marathon : if app does not exist, it will create it, otherwise it will replace existing conf file if and only if app is not scaled to 0.
+.. If applicable, Docker container will be restarted inside Marathon.
+
+Now, some common questions :
+
+===== My app was not restarted into Marathon
+
+Check if your application is currently scaled to 0. If it is, destroy your app / scale it to 1 and relaunch the Jenkins deploy job (e.g. deploy-to-recette)
+
+===== My app is in the deployments but never starts
+
+. Check Marathon general dashboard. If the problem seems to occur for a lot of apps, please contact support.ops
+. Check the last task failure reason. Go to the "Debug" tab and check the "Last Task Failure" section.
+. Check your application logs. Go to "Instances" tab and check "stout" log to read any issue in your logs.
+. Make sure you have the correct configuration for your app. In your app logs, check the app port and make sure it starts on 8080. If it doesn't, change your config in services-config so your app starts on 8080 port. Also check loaded profiles in the logs, it could point you to a potential config problem (e.g. a config file wrongly named)
+
+===== My app is deployed but does not show my changes
+
+Check last Jenkins logs (e.g. the release job logs if you tried to deploy a realease onto recette/preprod/prod) and check if docker build / docker push step was successful.

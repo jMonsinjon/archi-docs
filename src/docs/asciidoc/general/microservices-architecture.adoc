@@ -1,0 +1,43 @@
+= Microservices characteristics
+
+Here are the main characteristics of a microservice:
+
+* Componentization, the ability to replace parts of a system, comparing with stereo components where each piece can be replaced independently from the others.
+* Organisation around business capabilities instead of around technology.
+* Smart endpoints and dumb pipes, explicitly avoiding the use of an Enterprise Service Bus (ESB).
+* Decentralised data management with one database for each service instead of one database for a whole company.
+* Infrastructure automation with continuous delivery being mandatory.
+
+To be more specific, here are all the characteristics needed and implemented for our microservices:
+
+* Built around a single (bounded) functional responsibility - DDD
+* Atomically deployed
+* Loosely coupled
+* Autonomous lifecycle
+* A reasonable code size: easy to replace
+* Stateless
+* Autonomous data management
+* REST API
+* Service discovery
+* Distributed configuration
+
+Here are the characteristics that could be improved in our architecture
+
+* Organization in line with microservices structure
+* Ability to version the API
+* Auto scaling
+* Delegates transverses responsibilities to third party management APIs
+
+
+= Microservices @ Cdiscount
+
+As teams need full responsibility of their code and configuration, all their services are built from the team's repository.
+Discovery between services is specific to a team, all services deployed by a team will be mutually visible.
+They are not visible to other teams, which need to go through your gateway to call the services you want to expose.
+
+A team can handle one or more perimeters which are just a way to organize your containers in Marathon.
+
+
+Here is a schema of our building blocks for a single team:
+
+image::microservices-use-case.png[Microservices Architecture]

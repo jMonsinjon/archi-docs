@@ -1,0 +1,7 @@
+== Git tutorials
+One of the best resource to learn Git is provided by https://www.atlassian.com/git/[Atlassian].
+
+Here is a nice reminder provided by JRebel:
+
+image::git_cheat_sheet.jpg[Git Cheat Sheet]
+

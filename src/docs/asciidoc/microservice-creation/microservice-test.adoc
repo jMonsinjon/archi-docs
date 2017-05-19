@@ -1,0 +1,93 @@
+=== Testing
+
+==== Unit Tests
+
+Unit tests are the most simple things in the world because you don't need any specific dependencies, class annotations, ... you just need a class and a `@Test` annotated method, and you're good to go.
+
+===== Naming
+
+Your unit test classes should be named accordingly to the class you are testing, with an appended "Test" suffix.
+
+[source,java]
+----
+MathUtil --> MathUtilTest
+----
+
+It is very important that you respect this naming convention as it is used by Maven to differentiate your unit tests from your integration tests, allowing to run unit tests each time whereas integration tests could potentially be run less frequently.
+
+===== Basic Usage
+
+[source,java]
+----
+include::examples/SimpleTestClass.java[]
+----
+
+==== Integration Tests
+
+Sometimes you will want to test something using the full context of the app, e.g. when testing web controllers, or if you need real settings injections, etc. You can mostly refer to the very good http://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-testing.html#boot-features-testing-spring-boot-applications[SpringBoot test documentation], however here are a few tips to get you started with integration tests.
+
+===== Naming
+
+Your integration test classes should be named accordingly to the class you are testing, with an appended `IT` suffix.
+
+[source,java]
+----
+SynonymSettings --> SynonymSettingsIT
+----
+
+===== Running with the real application context
+
+It is pretty straightforward to run an integration test within SpringBoot 1.4+. You only need `@RunWith` and `@SpringBootTest` annotations !
+
+[source,java]
+----
+include::examples/SynonymsSettingsIT.java[]
+----
+
+A few precisions :
+
+* `@RunWith` annotation tells that your class needs to use Spring runner to run this test
+* `@SpringBootTest` annotations allows you to use a real SpringBoot context. You should load your main configuration here.
+* If you have a lot of test classes, you might want to factorize the annotation into a single abstract class such as below :
+
+[source,java,options="nowrap"]
+----
+include::examples/AbstractTestSimple.java[]
+----
+
+===== Specific test config
+
+While making integration tests with real frameworks such as Zookeeper or Solr, you will see that some initializations will fail because they will be based on default app's configuration which contains fake connection strings.
+
+What you basically want to do there is define specific test resources just like you would do for normal configuration, and then load them into your test. If we take the same example as earlier, here is how we would declare the test file :
+
+[source,java,options="nowrap"]
+----
+include::examples/AbstractTestWithProfile.java[]
+----
+
+We need to specify the name of the test file in `@SpringBootTest` annotation and we also need to say to Spring that we will need to load the `test` profile.
+
+You will need to put your test config in your test resources folder :
+
+[source,bash]
+----
+/src/test/resources/application-test.yml
+----
+
+===== Specific logback config
+
+Integration tests usually launch the application and therefore use most of their features, including writing of logs file. However tests should not depend on the machine they are run on, that's why you should specify a custom `logback-test.xml` file in your test resources to avoid writing log files during the tests phase (it probably won't be a problem when executing the tests in local but when launching them on CI platform tests probably won't have the rights to do so).
+
+The format of your logs doesn't really matter, but the important thing is to remove the file appender from your config and keep a sdout (console) appender for debugging purposes, e.g:
+
+[source,xml,options="nowrap"]
+----
+include::examples/logback-config.xml[]
+----
+
+===== Frameworks Mocking
+
+Sometimes you need to mock a external system like Zookeeper, Solr, Mongo, etc. You will usually end up using the http://mockito.org[Mockito framework] or http://wiremock.org[Wiremock]. Mockito allows you tu use basic mock functionnality whereas Wiremock helps you with HTTP request mocks. They are both well documented and pretty straightforward to use.
+
+For advanced mocks (solr, or zookeeper) you can also use the http://git.cdbdx.biz/ft-search/search-services-utils[services-test-utils] and call various method to setup a fake zookeeper and a fake solr.

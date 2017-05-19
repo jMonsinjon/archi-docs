@@ -1,0 +1,3 @@
+[submodule "jenkins-scripts"]
+	path = jenkins-scripts
+	url = http://git.cdbdx.biz/git/alm/jenkins-scripts.git

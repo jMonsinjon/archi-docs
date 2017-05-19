@@ -1,0 +1,83 @@
+=== Cdiscount microservice generator
+
+We built a generator to very easily generate a new microservice.
+It will be a good starting point and will prevent you from having to put a lot of boilerplate code or configs and will save you a lot of efforts.
+
+==== How to install the generator
+
+The generator is currently a http://yeoman.io/[Yeoman] generator and as such, it requires you to have https://www.npmjs.com/[npm package manager] installed on your machine.
+
+Here are all the steps needed to have a running microservice generator :
+
+1. Install https://nodejs.org/en/[Node.js] which comes bundled with https://www.npmjs.com/[npm]. Node.js can run on pretty much any platform, Windows, Mac or Linux.
+1. Install Yeoman command line `yo` by running :
+
+[source, bash]
+----
+npm install -g yo
+----
+
+[start=3]
+1. Check if you have curl in your path. If not, install https://curl.haxx.se/download.html[curl] library and
+make sure you have it in your path by running.
+
+[source, bash]
+----
+curl --version
+----
+
+If you still don't have it, add it to your environment variables.
+
+[start=4]
+1. Checkout the yeoman-microservice-generator Git project :
+
+[source, bash]
+----
+git clone http://git.cdbdx.biz/git/archi/yeoman-microservice-generator.git
+----
+
+[start=5]
+1. Go to your newly cloned generator directory and add it to Yeoman as a local generator :
+
+[source, bash]
+----
+cd yeoman-microservice-generator
+npm link
+----
+
+And that's it, you should be ready to use the generator !
+
+==== How to use the generator
+
+Very hard :
+
+1. Go to the folder where you want to put your new application, e.g.:
+
+[source, bash]
+----
+cd ~/my-workspace
+----
+
+[start=2]
+1. Start the generation :
+
+[source, bash]
+----
+yo microservice
+----
+
+... and just follow the instructions and answer the questions like in the above capture :
+
+image::yo-microservice-generator-example.png[Yeoman microservice generator example]
+
+==== Sample outputs
+
+Upon microservice genereator execution, you will see that a lot of files have been created. Below you'll find an example overview of all the created files, but keep in mind that files can change depending on the chosen options :
+
+image::yo-microservice-skeleton-example.png[Yeoman microservice skeleton example]
+
+==== What's next ?
+
+You can start developing your service, but when you need more information on how Cdiscount microservices work, you should refer to <<Understanding microservices>> section.
+
+In particular, you might want to check how to handle configurations in the <<Working with configurations>> chapter or how to build & deploy in the <<Building and deploying your microservice>> chapter.
