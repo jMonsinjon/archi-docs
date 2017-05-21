@@ -1,0 +1,142 @@
+=== HTTP
+
+==== *MUST* Use HTTP Methods Correctly
+
+Be compliant with the standardized HTTP method semantics summarized as follows:
+
+===== GET
+
+GET requests are used to read a single resource or query set of resources.
+
+* GET requests for individual resources will usually generate a 404 if the resource does not exist
+* GET requests for collection resources may return either 200 (if the listing is empty) or 404 (if the list is missing)
+* GET requests must NOT have request body payload
+
+**Note:** GET requests on collection resources should provide a sufficient filter mechanism as well
+as http://./pagination.adoc[pagination].
+
+===== GET with Body
+
+APIs sometimes face the problem, that they have to provide extensive structured request information
+with GET, that may even conflicts with the size limits of clients, load-balancers, and servers. As
+we require APIs to be standard conform (body in GET must be ignored on server side), API designers
+have to check the following two options:
+
+1. GET with URL encoded query parameters: when it is possible to encode the request information in
+   query parameters, respecting the usual size limits of clients, gateways, and servers, this should
+   be the first choice. The request information can either be provided distributed to multiple query
+   parameters or a single structured URL encoded string.
+2. POST with body content: when a GET with URL encoded query parameters is not possible, a POST with
+   body content must be used. In this case the endpoint must be documented with  the hint `GET with
+   body` to transport the GET semantic of this call.
+
+**Note:** It is no option to encode the lengthy structured request information in header parameters.
+From a conceptual point of view, the semantic of an operation should always be expressed by resource
+name and query parameters, i.e. what goes into the URL. Request headers are reserved for general
+context information, e.g. FlowIDs. In addition, size limits on query parameters and headers are not
+reliable and depend on clients, gateways, server, and actual settings. Thus, switching to headers
+does not solve the original problem.
+
+===== POST
+
+POST requests are idiomatically used to create single resources on a collection resource endpoint,
+but other semantics on single resources endpoint are equally possible. The semantic for collection
+endpoints is best described as *please add the enclosed representation to the collection resource
+identified by the URL*. The semantic for single resource endpoints is best described as *please
+execute the given well specified request on the collection resource identified by the URL*.
+
+* POST request should be applied to single resource and collection resources
+* on successful POST requests, the server will create one or multiple new resources and provide their URI/URLs in the response
+* successful POST requests will usually generate 200 (if resources have been updated), 201 (if resources have been created), and 202 (if the request was accepted but has not been finished yet)
+
+**More generally:** POST should be used for scenarios that cannot be covered by the other methods
+sufficiently. For instance, GET with complex (e.g. SQL like structured) query that needs to be
+passed as request body payload because of the URL-length constraint. In such cases, make sure to
+document the fact that POST is used as a workaround.
+
+**Note:** Resource IDs with respect to POST requests are created and maintained by server and
+returned with response payload. Posting the same resource twice is by itself **not** required to
+be idempotent and may result in multiple resource instances. Anyhow, if external URIs are present
+that can be used to identify duplicate requests, it is best practice to implement POST in an
+idempotent way.
+
+===== PUT
+
+PUT requests are used to update **entire** resources - single or collection resources. The semantic is best described as *please put the enclosed representation at the resource mentioned by the URL, replacing any existing resource.*.
+
+* PUT requests are usually applied to single resources, and not to collection resources, as this would imply replacing the entire collection
+* PUT requests are usually robust against non-existence of resources by implicitly creating before updating
+* on successful PUT requests, the server will **replace the entire resource** addressed by the URL with the representation passed in the payload (subsequent reads will deliver the same payload)
+* successful PUT requests will usually generate 200 or 204 (if the resource was updated - with or without actual content returned), and 201 (if the resource was created)
+
+**Note:** Resource IDs with respect to PUT requests are maintained by the client and passed as a URL path segment. Putting the same resource twice is required to be idempotent and to result in the same single resource instance. For creating a resource, POST should be preferred.
+
+===== DELETE
+
+DELETE request are used to delete resources. The semantic is best described as *please delete the resource identified by the URL*.
+
+* DELETE requests are usually applied to single resources, not on collection resources, as this would imply deleting the entire collection
+* successful DELETE request will usually generate 200 (if the deleted resource is returned) or 204 (if no content is returned)
+* failed DELETE request will usually generate 404 (if the resource cannot be found) or 410 (if the resource was already deleted before)
+
+
+==== *MUST* Use Specific HTTP Status Codes
+
+This guideline groups the following rules for HTTP status codes usage:
+
+* You must not invent new HTTP status codes; only use standardized HTTP status codes and consistent with its intended semantics. 
+* You should use the most specific HTTP status code for your concrete resource request processing status or error situation. 
+* You should provide good documentation in the API definition when using HTTP status codes that are less commonly used and not listed below.  
+
+There are ~60 different HTTP status codes with specific semantics defined in the HTTP standards (mainly https://tools.ietf.org/html/rfc7231#section-6[RFC7231] and https://tools.ietf.org/html/rfc6585[RFC-6585]) - and there are upcoming new ones, e.g. https://tools.ietf.org/html/draft-tbray-http-legally-restricted-status-05[draft legally-restricted-status] (see overview on all error codes on https://en.wikipedia.org/wiki/List_of_HTTP_status_codes[Wikipedia] or via https://httpstatuses.com/<error_code>). And there are unofficial ones, e.g. used by specific web servers like Nginx.  
+
+Our list of most commonly used and best understood HTTP status codes: 
+
+===== Success Codes
+
+|=======================
+|*Code*|*Meaning*|*Methods*
+| 200  | OK - this is the standard success response | All 
+| 201  | Created - Returned on successful entity creation. You are free to return either an empty response or the created resource in conjunction with the Location header. (More details found in the [Common Headers section](../headers/CommonHeaders.md).) *Always* set the Location header. | POST, PUT
+| 202  | Accepted - The request was successful and will be processed asynchronously. | POST, PUT, DELETE
+| 204  | No content - There is no response body | PUT, DELETE
+| 207  | Multi-Status - The response body contains multiple status informations for different parts of a batch/bulk request. See ["Use 207 for Batch or Bulk Requests"](../http/Http.md#must-use-207-for-batch-or-bulk-requests). | POST
+|=======================
+
+===== Redirection Codes
+
+|=======================
+|*Code*|*Meaning*|*Methods*
+| 301 | Moved Permanently - This and all future requests should be directed to the given URI. | All
+| 303 | See Other - The response to the request can be found under another URI using a GET method.  | POST, PUT, DELETE
+| 304 | Not Modified - resource has not been modified since the date or version passed via request headers If-Modified-Since or If-None-Match. | GET
+|=======================
+
+===== Client Side Error Codes
+
+|=======================
+|*Code*|*Meaning*|*Methods*
+| 400 | Bad request - generic / unknown error | All
+| 401 | Unauthorized - the users must log in (this often means “Unauthenticated”) | All
+| 403 | Forbidden - the user is not authorized to use this resource | All
+| 404 | Not found - the resource is not found | All
+| 405 | Method Not Allowed - the method is not supported, see OPTIONS | All
+| 406 | Not Acceptable - resource can only generate content not acceptable according to the Accept headers sent in the request | All
+| 408 | Request timeout - the server times out waiting for the resource | All
+| 409 | Conflict - request cannot be completed due to conflict, e.g. when two clients try to create the same resource or if there are concurrent, conflicting updates | PUT, DELETE
+| 410 | Gone - resource does not exist any longer, e.g. when accessing a resource that has intentionally been deleted | All
+| 412 | Precondition Failed - returned for conditional requests, e.g. If-Match if the condition failed. Used for optimistic locking. | PUT, DELETE
+| 415 | Unsupported Media Type - e.g. clients sends request body without content type | PUT, DELETE
+| 423 | Locked - Pessimistic locking, e.g. processing states | PUT, DELETE
+| 428 | Precondition Required - server requires the request to be conditional (e.g. to make sure that the “lost update problem” is avoided). | All
+| 429 | Too many requests - the client does not consider rate limiting and sent too many requests. See http://../http.adoc#must-use-429-with-headers-for-rate-limits["Use 429 with Headers for Rate Limits"]. | All
+|=======================
+
+===== Server Side Error Codes:
+
+|=======================
+|*Code*|*Meaning*|*Methods*
+| 500 | Internal Server Error - a generic error indication for an unexpected server execution problem (here, client retry may be senseful) | All
+| 501 | Not Implemented -  server cannot fulfill the request (usually implies future availability, e.g. new feature). | All
+| 503 | Service Unavailable - server is (temporarily) not available (e.g. due to overload) -- client retry may be senseful. | All
+|=======================
