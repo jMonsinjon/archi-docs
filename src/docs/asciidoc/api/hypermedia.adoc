@@ -1,0 +1,71 @@
+=== Hypermedia
+
+==== *MUST* Use REST Maturity Level 2
+
+We strive for a good implementation of http://martinfowler.com/articles/richardsonMaturityModel.html#level2[REST Maturity Level 2] as it enables us to build resource-oriented APIs that make full use of HTTP verbs and status codes.
+You can see this expressed by many rules throughout these guidelines, e.g.:
+* http://./resources.adoc#must-avoid-actions-—-think-about-resources[Avoid Actions — Think About Resources]
+* http://./resources.adoc#must-keep-urls-verbfree[Keep URLs Verb-Free]
+* http://./http.adoc#must-use-http-methods-correctly[Use HTTP Methods Correctly]
+* http://./http.adoc#must-use-meaningful-http-status-codes[Use Meaningful HTTP Status Codes]
+
+Although this is not HATEOAS, it should not prevent you from designing proper link relationships in your APIs as stated in rules below.
+
+==== *MUST* Use a well-defined subset of HAL
+
+Links to other resources must be defined exclusively using http://stateless.co/hal_specification.html[HAL] and preferably using standard http://www.iana.org/assignments/link-relations/link-relations.xml[link relations].
+
+Clients and Servers are required to support `_links` with its `href` and `rel` attributes, not only at the root level but also in nested objects. To reduce the effort needed by clients to process hypertext data from servers it's not recommended to serve data with CURIEs, URI templates or embedded resources. Nor is it required to support the HAL media type `application/hal+json`. The following snippet specifies the HAL link structure in JSONSchema:
+
+```yaml
+Link:
+  type: object
+  properties:
+    href:
+      type: string
+      format: uri
+      example: https://api.example.com/sales-orders/10101058747628
+  required:
+    - href
+Links:
+  type: object
+  description: |
+    Values can be either a single Link or an array of Links
+    See https://docs.pennybags.zalan.do/ for more.
+  additionalProperties:
+    # keys are link relations
+    type: array
+    items:
+      $ref: '#/definitions/Link'
+  example:
+    'self':
+      - href: https://api.example.com/sales-orders/10101058747628
+```
+
+We opted for this subset of HAL after conducting a comparison of different hypermedia formats based on properties like:
+
+* Simplicity: resource link syntax and concepts are easy to understand and interpret for API clients.
+* Compatibility: introducing and adding links to resources is not breaking existing API clients.
+* Adoption: use in open-source libraries and tools as well as other companies
+* Docs: degree of good documentation
+
+[options="header"]
+|=======================
+|Standard | Simplicity | Compatibility | Adoption | Primary Focus | Docs
+|HAL Subset | ✓ | ✓  | ✓ |Links and relationships | ✓  
+|http://stateless.co/hal_specification.html[HAL] | ✗ | ✓ | ✓| Links and relationships | ✓ 
+|http://jsonapi.org/[JSON API] | ✗ | ✗ | ✓ | Response format| ✓ 
+|http://json-ld.org/[JSON-LD] | ✗ | ✓ | ? | Link data | ?
+|https://github.com/kevinswiber/siren[Siren] | ✗ | ✗ | ✗ | Entities and navigation | ✗
+|http://amundsen.com/media-types/collection/[Collection+JSON] | ✗ | ✗ | ✗ | Collections and queries | ✓
+|=======================
+
+We define HAL links to be extensible, i.e. to contain additional properties if needed. For consistency extensions should reuse attributes from the https://tools.ietf.org/html/rfc5988#section-5[`Link` header].
+
+Interesting articles for comparisons of different hypermedia formats:
+* http://sookocheff.com/post/api/on-choosing-a-hypermedia-format/[Kevin Sookocheff’s On choosing a hypermedia type for your API]
+* http://blogs.mulesoft.com/dev/api-dev/api-best-practices-hypermedia-part-3/[Mike Stowe's API Best Practices: Hypermedia]
+
+==== *MUST* Do Not Use Link Headers with JSON entities
+
+We don't allow the use of the http://tools.ietf.org/html/rfc5988#section-5[`Link` Header defined by RFC 5988] in conjunction with JSON media types, and favor http://./hypermedia.adoc#must-use-hal[HAL] instead. The primary reason is to have a consistent place for links as well as the better support for links in JSON payloads compared to the uncommon link header syntax.
